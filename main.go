@@ -19,7 +19,6 @@ func getGroupName(id string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		_ = dg.State.ChannelAdd(st)
 	}
 	return st.Name, nil
 }
@@ -149,6 +148,38 @@ func getUserAvatar(id string) (string, error) {
 func getSelfID() (string, error) {
 	return dg.State.User.ID, nil
 }
+func getPlatformID() (string, error) {
+	return "Discord", nil
+}
+func getGroupList() ([]string, error) {
+	var r []string
+	for _, guild := range dg.State.Guilds {
+		for _, channel := range guild.Channels {
+			if channel.Type == discordgo.ChannelTypeGuildText {
+				r = append(r, channel.ID)
+			}
+		}
+	}
+	return r, nil
+}
+func getMemberList(id string) ([]string, error) {
+	var r []string
+	channel, err := dg.State.Channel(id)
+	if err != nil {
+		channel, err = dg.Channel(id)
+		if err != nil {
+			return nil, err
+		}
+	}
+	guild, err := dg.State.Guild(channel.GuildID)
+	if err != nil {
+		return nil, err
+	}
+	for _, member := range guild.Members {
+		r = append(r, member.User.ID)
+	}
+	return r, nil
+}
 
 func onMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Author.ID == s.State.User.ID {
@@ -215,6 +246,9 @@ func main() {
 			GetMemberName:   getMemberName,
 			GetUserAvatar:   getUserAvatar,
 			GetSelfID:       getSelfID,
+			GetPlatformID:   getPlatformID,
+			GetGroupList:    getGroupList,
+			GetMemberList:   getMemberList,
 		}
 	})
 	ubot.AssertNoError(err)
