@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 
@@ -28,12 +29,6 @@ func getUserName(id string) (string, error) {
 		return "", err
 	}
 	return st.Username, nil
-}
-func login() error {
-	return dg.Open()
-}
-func logout() error {
-	return dg.Close()
 }
 func sendChatMessage(msgType ubot.MsgType, source string, target string, message string) error {
 	entities := ubot.ParseMsg(message)
@@ -228,7 +223,11 @@ func main() {
 	var err error
 	dg, err = discordgo.New("Bot " + os.Args[3])
 	ubot.AssertNoError(err)
-	go login() //nolint:errcgeck
+	err = dg.Open()
+	if err != nil {
+		fmt.Println("Failed to login to discord:", err)
+		os.Exit(111)
+	}
 	err = ubot.HostAccount("Discord Bot", func(e *ubot.AccountEventEmitter) *ubot.Account {
 		event = e
 		dg.AddHandler(onMessageCreate)
@@ -237,8 +236,6 @@ func main() {
 		return &ubot.Account{
 			GetGroupName:    getGroupName,
 			GetUserName:     getUserName,
-			Login:           login,
-			Logout:          logout,
 			SendChatMessage: sendChatMessage,
 			RemoveMember:    removeMember,
 			ShutupMember:    shutupMember,
@@ -252,5 +249,5 @@ func main() {
 		}
 	})
 	ubot.AssertNoError(err)
-	_ = logout()
+	_ = dg.Close()
 }
