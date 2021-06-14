@@ -36,14 +36,14 @@ func sendChatMessage(msgType ubot.MsgType, source string, target string, message
 	for _, entity := range entities {
 		switch entity.Type {
 		case "text":
-			data := entity.Data
+			data := entity.FirstArgOrEmpty()
 			data = strings.ReplaceAll(data, "\\", "\\\\")
 			data = strings.ReplaceAll(data, ">", "\\<")
 			data = strings.ReplaceAll(data, "<", "\\>")
 			rawMsg.WriteString(data)
 		case "at":
 			rawMsg.WriteString("<@!")
-			rawMsg.WriteString(entity.Data)
+			rawMsg.WriteString(entity.FirstArgOrEmpty())
 			rawMsg.WriteByte('>')
 		default:
 			rawMsg.WriteString("[不支持的消息类型]")
@@ -85,7 +85,7 @@ func convertFromDiscordMsg(m *discordgo.Message) string {
 				}
 				if j < len(rawMsg) && rawMsg[j] == '>' {
 					builder.WriteString(rawMsg[start : start+count])
-					builder.WriteEntity(ubot.MsgEntity{Type: "at", Data: rawMsg[i+3 : j]})
+					builder.WriteEntity(ubot.MsgEntity{Type: "at", Args: []string{rawMsg[i+3 : j]}})
 					i = j
 					start = i + 1
 					count = 0
